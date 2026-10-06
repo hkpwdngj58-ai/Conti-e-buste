@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Conti & Buste" />
+  <title>Conti & Buste</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">FINANZE PERSONALI</div>
+      <h1>Conti & Buste</h1>
+    </div>
+    <button id="backupBtn" class="icon-btn" title="Backup">⇩</button>
+  </header>
+
+  <main class="container">
+    <section class="hero card">
+      <div>
+        <div class="label">Totale reale</div>
+        <div id="totalBalance" class="money-xl">€0,00</div>
+      </div>
+      <div class="hero-grid">
+        <div><span>Assegnato</span><strong id="allocatedBalance">€0,00</strong></div>
+        <div><span>Libero</span><strong id="freeBalance">€0,00</strong></div>
+      </div>
+    </section>
+
+    <section class="section-head">
+      <div>
+        <h2>Conti reali</h2>
+        <p>ING, BBVA o altri conti che vuoi tenere sotto controllo.</p>
+      </div>
+      <button id="addAccountBtn" class="primary">+ Conto</button>
+    </section>
+    <section id="accountsList" class="stack"></section>
+
+    <section class="section-head">
+      <div>
+        <h2>Buste virtuali</h2>
+        <p>Il denaro resta sui conti reali; qui lo separi solo contabilmente.</p>
+      </div>
+      <button id="addEnvelopeBtn" class="primary">+ Busta</button>
+    </section>
+    <section id="envelopesList" class="grid"></section>
+
+    <section class="section-head">
+      <div>
+        <h2>Movimenti</h2>
+        <p>Spese, entrate e trasferimenti manuali.</p>
+      </div>
+      <button id="addTxBtn" class="primary">+ Movimento</button>
+    </section>
+
+    <section class="card toolbar-card">
+      <input id="searchInput" class="search" placeholder="Cerca movimento…" />
+      <select id="filterAccount"></select>
+      <select id="filterEnvelope"></select>
+      <button id="importCsvBtn" class="secondary">Importa CSV</button>
+      <input id="csvFile" type="file" accept=".csv,text/csv" hidden />
+    </section>
+    <section id="txList" class="stack"></section>
+
+    <section class="card info-card">
+      <strong>Privacy</strong>
+      <p>Questa versione non chiede credenziali bancarie e non invia dati a server. I dati sono salvati nel browser sul dispositivo. Fai periodicamente un backup.</p>
+    </section>
+  </main>
+
+  <dialog id="accountDialog">
+    <form method="dialog" id="accountForm" class="modal-form">
+      <div class="modal-head"><h3>Conto</h3><button value="cancel" class="close">×</button></div>
+      <input type="hidden" id="accountId" />
+      <label>Nome<input id="accountName" required placeholder="es. ING" /></label>
+      <label>Saldo attuale<input id="accountBalance" required type="number" step="0.01" inputmode="decimal" /></label>
+      <div class="modal-actions"><button value="cancel" class="secondary">Annulla</button><button id="saveAccount" value="default" class="primary">Salva</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="envelopeDialog">
+    <form method="dialog" id="envelopeForm" class="modal-form">
+      <div class="modal-head"><h3>Busta virtuale</h3><button value="cancel" class="close">×</button></div>
+      <input type="hidden" id="envelopeId" />
+      <label>Nome<input id="envelopeName" required placeholder="es. Bollette" /></label>
+      <label>Importo assegnato<input id="envelopeBalance" required type="number" step="0.01" inputmode="decimal" /></label>
+      <label>Icona<select id="envelopeIcon"><option>🏠</option><option>💡</option><option>🚗</option><option>✈️</option><option>🛒</option><option>🩺</option><option>🎁</option><option>🧾</option><option>💰</option><option>🎯</option></select></label>
+      <div id="envelopeHint" class="hint"></div>
+      <div class="modal-actions"><button value="cancel" class="secondary">Annulla</button><button id="saveEnvelope" value="default" class="primary">Salva</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="txDialog">
+    <form method="dialog" id="txForm" class="modal-form">
+      <div class="modal-head"><h3>Movimento</h3><button value="cancel" class="close">×</button></div>
+      <label>Tipo<select id="txType"><option value="expense">Spesa</option><option value="income">Entrata</option></select></label>
+      <label>Data<input id="txDate" required type="date" /></label>
+      <label>Descrizione<input id="txDescription" required placeholder="es. Supermercato" /></label>
+      <label>Importo<input id="txAmount" required type="number" min="0.01" step="0.01" inputmode="decimal" /></label>
+      <label>Conto<select id="txAccount" required></select></label>
+      <label>Busta (opzionale)<select id="txEnvelope"></select></label>
+      <div class="hint">Una spesa riduce il saldo del conto. Se scegli una busta, riduce anche il saldo disponibile di quella busta.</div>
+      <div class="modal-actions"><button value="cancel" class="secondary">Annulla</button><button id="saveTx" value="default" class="primary">Salva</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="backupDialog">
+    <form method="dialog" class="modal-form">
+      <div class="modal-head"><h3>Backup e ripristino</h3><button value="cancel" class="close">×</button></div>
+      <button id="exportJson" type="button" class="primary full">Esporta backup JSON</button>
+      <button id="exportCsv" type="button" class="secondary full">Esporta movimenti CSV</button>
+      <button id="restoreJsonBtn" type="button" class="secondary full">Ripristina da JSON</button>
+      <input id="jsonFile" type="file" accept="application/json,.json" hidden />
+      <button id="resetApp" type="button" class="danger full">Azzera tutti i dati</button>
+    </form>
+  </dialog>
+
+  <template id="emptyTpl"><div class="empty">Nessun dato ancora.</div></template>
+
+  <script src="app.js"></script>
+</body>
+</html>
